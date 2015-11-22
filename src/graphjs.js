@@ -1,45 +1,80 @@
 'use strict';
 
-function get (seletor,seletor_aux) {
-	if(typeof(seletor)=="string" && seletor.indexOf("#")==0 && seletor.indexOf(" ")==-1) {
-		return document.getElementById(seletor.substr(1))
-	}
-	if(typeof(seletor)=="string") {
-		return document.getElementById(seletor);
-	}
-	if(typeof(seletor)=="object" && seletor instanceof HTMLCanvasElement) {
-		return seletor;
-	}
-	if(typeof(document.querySelector)!="undefined" && document.querySelector) {
-		return document.querySelector(seletor)
-	}
-	else { 
-		var els=document.querySelectorAll(seletor);
-		if(els && els.length>0){
-			return els[0];
+var Helper = (function (window, document, pluginName, undefined){
+	function get (seletor,seletor_aux) {
+		if(typeof(seletor)=="string" && seletor.indexOf("#")==0 && seletor.indexOf(" ")==-1) {
+			return document.getElementById(seletor.substr(1))
+		}
+		if(typeof(seletor)=="string") {
+			return document.getElementById(seletor);
+		}
+		if(typeof(seletor)=="object" && seletor instanceof HTMLCanvasElement) {
+			return seletor;
+		}
+		if(typeof(document.querySelector)!="undefined" && document.querySelector) {
+			return document.querySelector(seletor)
 		}
 		else { 
-			return null;
+			var els=document.querySelectorAll(seletor);
+			if(els && els.length>0){
+				return els[0];
+			}
+			else { 
+				return null;
+			}
 		}
 	}
-}
 
-function type (obj) {
-	if(typeof obj == "undefined")
-		return "undefined";
-	if(obj == null)
-		return "null";
-	return Object.prototype.toString.call(obj).match(/^\[object\s(.*)\]$/)[1].toLowerCase();
-}
+	function type (obj) {
+		if(typeof obj == "undefined")
+			return "undefined";
+		if(obj == null)
+			return "null";
+		return Object.prototype.toString.call(obj).match(/^\[object\s(.*)\]$/)[1].toLowerCase();
+	}
+
+	function drawText (context, text, x, y, fill) {
+		context.font = "bold 10pt Verdana";
+	    context.fillStyle = fill;
+	    context.fillText(text, x, y);
+	}
+
+	function drawCircle (context, x, y, radius, fill, Width, line) {
+		context.arc(x, y, radius, 0, 2*Math.PI);
+		context.fillStyle = fill;
+		context.fill();
+		context.strokeStyle = line;
+		context.lineWidth = Width ? Width : 2;
+		context.stroke();
+	}
+
+	function drawLine (context, x1, y1, x2, y2) {
+		context.moveTo(x1, y1);
+		context.lineTo(x2, y2);
+		context.strokeStyle = "#C5C5C5";
+		context.lineWidth = 4;
+		context.stroke();
+	}
+
+	return {
+		get: get,
+		type: type,
+		drawText: drawText,
+		drawCircle: drawCircle,
+		drawLine: drawLine
+	}
+
+})(window, document);
+
 
 var GraphJs = function (el){
-	this.canvas		= null;
-	this.context 	= null;
-	this.circles	= [];
-	this.lines		= [];
-	this._h			= null;
+	this.canvas	 = null;
+	this.context = null;
+	this.nodes = [];
+	this.lines	 = [];
+	this._h		 = null;
 
-	el = get(el);
+	el = Helper.get(el);
 	this._init(el);
 };
 
@@ -100,80 +135,100 @@ GraphJs.prototype = {
 	
 		this.ctx.closePath();
 	},
-	circle : function (data) {
-		this.circles.push(data);
+	addNode : function (data) {
+		this.nodes.push(data);
 		return data;
 	},
-	connected: function (obj, obj_outher) {
-		if (type(obj)!="object" && type(obj_outher)!="object") {
-			throw("Arguments invalid!");
+	addVertice: function (startNode, endNode) {
+		if(startNode == null){
+			throw("[GraphJs] StartNode was not selected"); 
 			return false;
 		}
+		if(endNode == null){
+			throw("[GraphJs] EndNode was not selected"); 
+			return false;
+		}
+		if (Helper.type(startNode)!="object" && Helper.type(endNode)!="object") {
+			throw("[GraphJs] Arguments invalid!");
+			return false;
+		}
+		
 		var data =  [
 		{
-			x: obj['x'],
-			y: obj['y']
+			x: startNode['x'],
+			y: startNode['y']
 		},
 		{
-			x: obj_outher['x'],
-			y: obj_outher['y']	
+			x: endNode['x'],
+			y: endNode['y']	
 		}];
+
+		console.log(data);
 
 		this.lines.push(data);
 		return data;
 	},
 	render: function () {
-		if(type(this.lines) != "array") {
+		if(Helper.type(this.lines) != "array") {
 			throw("Arguments invalid!");
 		}
 
 		if(this.lines.length > 0){
 			for(var line in this.lines){
 				if (typeof this.lines[line] == "object") {
-					this.ctx.beginPath();
-						this.ctx.moveTo(this.lines[line][0]['x'], this.lines[line][0]['y']);
-						this.ctx.lineTo(this.lines[line][1]['x'], this.lines[line][1]['y']);
-						this.ctx.strokeStyle = "#b2b19d";
-						this.ctx.lineWidth = 4;
-						this.ctx.stroke();
-					this.ctx.closePath();
+					Helper.drawLine(
+						this.ctx,
+						this.lines[line][0]['x'],
+						this.lines[line][0]['y'],
+						this.lines[line][1]['x'],
+						this.lines[line][1]['y']
+					);
 				}
 			}
 		}
 
-		for(var obj in this.circles){
+		for(var obj in this.nodes){
+			var strokeStyle = null,
+				lineWidth   = null;
+
 			this.ctx.beginPath();
-				if (this.circles[obj]['radius']) {
-					this._h = this.circles[obj]['radius'];
-				}
-				else {
+				if (this.nodes[obj]['radius'])
+					this._h = this.nodes[obj]['radius'];
+				else
 					this._h = 50;
-				}
 
-				this.ctx.fillStyle = this.circles[obj]['color'];
-				this.ctx.arc(this.circles[obj]['x'], this.circles[obj]['y'], this._h, 0, 2*Math.PI);
-
-				if(this.circles[obj]['border'])
-					this.ctx.strokeStyle = this.circles[obj]['border'];
+				if(this.nodes[obj]['border'])
+					strokeStyle = this.nodes[obj]['border'];
 				else
-					this.ctx.strokeStyle = "black";
+					strokeStyle = "black";
 
-				if(this.circles[obj]['borderWidth'])
-					this.ctx.lineWidth = this.circles[obj]['borderWidth'];
+				if(this.nodes[obj]['borderSize'])
+					lineWidth = this.nodes[obj]['borderSize'];
 				else
-					this.ctx.lineWidth = 2;
+					lineWidth = 2;
 
-				this.ctx.stroke();
-				this.ctx.fill();
-			this.ctx.closePath();
-		
-			this.ctx.beginPath();
-				this.ctx.font = "bold 10pt Verdana";
-				this.ctx.fillStyle = "#fff";
-				if(this.circles[obj]['label']){
-					var text_length = (this.circles[obj]['label'].length*4);
+				this.ctx.fillStyle = this.nodes[obj]['color'];
+				
+				Helper.drawCircle(
+					this.ctx, 
+					this.nodes[obj]['x'], 
+					this.nodes[obj]['y'], 
+					this._h, 
+					this.nodes[obj]['color'], 
+					lineWidth, 
+					this.nodes[obj]['border']
+				);
 
-					this.ctx.fillText(this.circles[obj]['label'], (this.circles[obj]['x'] - text_length), (this.circles[obj]['y']+5));
+				if(this.nodes[obj]['label']){
+					var text_length = (this.nodes[obj]['label'].length*4);
+
+					Helper.drawText(
+						this.ctx,
+						this.nodes[obj]['label'],
+						(this.nodes[obj]['x'] - text_length),
+						(this.nodes[obj]['y']+5),
+						"#fff"
+					);
 				}
 			this.ctx.closePath();
 		}
