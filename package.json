@@ -1,0 +1,24 @@
+{
+  "name": "GraphJs",
+  "version": "1.0.0",
+  "description": "A simple and light javascript library for drawing graphs through canvas.",
+  "main": "graphjs.js",
+  "directories": {
+    "example": "example"
+  },
+  "keywords": [
+    "GraphJs",
+    "canvas"
+  ],
+  "authors": [
+    {
+      "name": "Wellington dos Santos",
+      "email": "wellington30071997@gmail.com"
+    },
+    {
+      "name": "Renan Palmeira",
+      "email": "renanpalmeira1@hotmail.com"
+    }
+  ],
+  "license": "MIT"
+}
