@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>
+			GraphJs
+		</title>
+		<script type="text/javascript" src="../src/graphjs.js"></script>
+	</head>
+	<style type="text/css">
+		*{
+			margin: 0px;
+			padding: 0px;
+		}
+		body{
+			text-align: center;
+		}
+		canvas{
+			margin: 5% auto;
+		}
+	</style>
+	<body>
+		<canvas id="mycanvas" height="500px" width="800px"></canvas>
+	</body>
+	<script type="text/javascript">
+		g = new GraphJs('mycanvas');
+		
+		c1 = g.circle({
+			label: 'friend1',
+			x: 150,
+			y: 50,
+			color: "deepskyblue"
+		});
+
+		c2 = g.circle({
+			label: 'friend2',
+			x: 450,
+			y: 150,
+			color: "green"
+		});
+
+		c3 = g.circle({
+			label: 'friend3',
+			x: 150,
+			y: 250,
+			color: "blue"
+		});
+
+		g.connected(c1, c2);
+		g.connected(c1, c3);
+
+		g.render();
+	</script>
+</html>
